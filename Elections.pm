@@ -20,7 +20,7 @@ sub get_statevals {
 sub get_parstates {
   my ($datfile,$sign) = @_;
   my @arr;
-  open (DATA, "$FindBin::Bin/$datfile") || die "Cannot open data file\n";
+  open (DATA, "$datfile") || die "Cannot open data file\n";
   while(my $line = <DATA>){
     chomp($line);
     my @linearray = split(/:[\t]?/,$line);
