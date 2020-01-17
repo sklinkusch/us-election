@@ -94,7 +94,7 @@ my $repprob = 100 * $summr / $szenarios;
 if ($summr != 0){
   printf("Rep. probability:  %8.4f %%  %26s\n", $repprob, $summrx);
 }
-if($swino < 20){
+if($swino < 20 and $swino > 0){
 # Calculate and print corrected probabilities (and all the variations)
   my $iter = variations_with_repetition([qw/D R/], $perms);
   my @statedesc = get_statedesc(@swingsts);
