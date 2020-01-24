@@ -3,7 +3,7 @@ use strict;
 use FindBin;
 use List::Util qw (reduce any all none notall first max maxstr min minstr product sum sum0 pairs unpairs pairkeys pairvalues pairgrep pairfirst pairmap shuffle uniq uniqnum uniqstr);
 use Exporter qw(import);
-our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles);
+our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent);
 
 sub get_statevals {
   my %vals;
@@ -603,6 +603,19 @@ sub delete_doubles {
       $nrosp++;
     }
   }
+}
+
+sub get_percent {
+  my %perc;
+  open(PERC,"./prespercent.dat") || die "Cannot open percentage file\n";
+  while (my $line = <PERC>){
+    $line =~ /([A-Z]{2}[0-9]?):[\t]?([0-9\.]*)[\t](0-9\.)*/;
+    my $state = $1;
+    my $dem = $2;
+    my $rep = $3;
+    $perc{$state} = { "D" => $dem, "R" => $rep };
+  }
+  return %perc;
 }
 
 1;
