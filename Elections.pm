@@ -3,7 +3,9 @@ use strict;
 use FindBin;
 use List::Util qw (reduce any all none notall first max maxstr min minstr product sum sum0 pairs unpairs pairkeys pairvalues pairgrep pairfirst pairmap shuffle uniq uniqnum uniqstr);
 use Exporter qw(import);
-our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent);
+our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent get_hvals);
+use lib $FindBin::RealBin;
+use HistElections qw(get_histvalues);
 
 sub get_statevals {
   my %vals;
@@ -616,6 +618,19 @@ sub get_percent {
     $perc{$state} = { "D" => $dem, "R" => $rep };
   }
   return %perc;
+}
+
+sub get_hvals {
+  my $year = shift;
+  my %histvals = get_histvalues();
+  my %hvals;
+  my @histkeys = keys %histvals;
+  foreach my $xh (0..$#histkeys) {
+    if(exists $histvals{$histkeys[$xh]}{$year}) {
+      $hvals{$histkeys[$xh]} = $hvals{$histkeys[$xh]}{$year};
+    }
+  }
+  return %hvals;
 }
 
 1;
