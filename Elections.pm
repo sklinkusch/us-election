@@ -3,7 +3,7 @@ use strict;
 use FindBin;
 use List::Util qw (reduce any all none notall first max maxstr min minstr product sum sum0 pairs unpairs pairkeys pairvalues pairgrep pairfirst pairmap shuffle uniq uniqnum uniqstr);
 use Exporter qw(import);
-our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent get_hvals);
+our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_closedstates_hist get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent get_hvals);
 use lib $FindBin::RealBin;
 use HistElections qw(get_histvalues);
 
@@ -37,29 +37,52 @@ sub get_parstates {
 }
 
 sub check_par {
- my @states = @_;
- my $mesum = 0;
- my $nesum = 0;
- my $me = 0; my $mea = 0; my $meb = 0; my $mex = 0; 
- my $ne = 0; my $nea = 0; my $neb = 0; my $nec = 0;
- foreach my $xxd (0..$#states){
-  $me  = 1 if $states[$xxd] eq 'ME';
-  $mea = 1 if $states[$xxd] eq 'ME1';
-  $meb = 1 if $states[$xxd] eq 'ME2';
-  $mex = 1 if $states[$xxd] =~ /ME[0-9]{1}/;
-  $ne  = 1 if $states[$xxd] eq 'NE';
-  $nea = 1 if $states[$xxd] eq 'NE1';
-  $neb = 1 if $states[$xxd] eq 'NE2';
-  $nec = 1 if $states[$xxd] eq 'NE3';
+ my ($states, $allstates) = @_;
+ my $num;
+ foreach my $xxy (0..$#$states){
+   $num = 0;
+   foreach my $xxz (0..$#$allstates){
+     $num = 1 if ($$states[$xxy] eq $$allstates[$xxz]);
+   }
+   if($num == 1){
+     next;
+   } else {
+     $$states[$xxy] = undef;
+     next;
+   }
  }
- $nesum += 1 if $nec == 1;
- $nesum += 2 if $neb == 1;
- $nesum += 4 if $nea == 1;
- $nesum += 8 if $ne  == 1;
- $mesum += 1 if $meb == 1;
- $mesum += 2 if $mea == 1;
- $mesum += 4 if $me  == 1;
- return ($mesum,$nesum,$me,$mea,$meb,$mex,$ne,$nea,$neb,$nec);
+  my $nrosp = 0;
+  foreach my $bb (0..$#$states){
+    my $vali = $bb - $nrosp;
+    if(defined $$states[$vali]){
+      next;
+    }else{
+      splice(@$states,$vali,1);
+      $nrosp++;
+    }
+  }
+  my $mesum = 0;
+  my $nesum = 0;
+  my $me = 0; my $mea = 0; my $meb = 0; my $mex = 0; 
+  my $ne = 0; my $nea = 0; my $neb = 0; my $nec = 0;
+  foreach my $xxd (0..$#$states){
+    $me  = 1 if $$states[$xxd] eq 'ME';
+    $mea = 1 if $$states[$xxd] eq 'ME1';
+    $meb = 1 if $$states[$xxd] eq 'ME2';
+    $mex = 1 if $$states[$xxd] =~ /ME[0-9]{1}/;
+    $ne  = 1 if $$states[$xxd] eq 'NE';
+    $nea = 1 if $$states[$xxd] eq 'NE1';
+    $neb = 1 if $$states[$xxd] eq 'NE2';
+    $nec = 1 if $$states[$xxd] eq 'NE3';
+  }
+  $nesum += 1 if $nec == 1;
+  $nesum += 2 if $neb == 1;
+  $nesum += 4 if $nea == 1;
+  $nesum += 8 if $ne  == 1;
+  $mesum += 1 if $meb == 1;
+  $mesum += 2 if $mea == 1;
+  $mesum += 4 if $me  == 1;
+  return ($mesum,$nesum,$me,$mea,$meb,$mex,$ne,$nea,$neb,$nec);
 }
 
 sub check_states {
@@ -99,6 +122,48 @@ sub get_closedstates {
  }
  $$mesum = $$ifme + $$ifmea + $$ifmeb;
  $$nesum = $$ifne + $$ifnea + $$ifneb + $$ifnec;
+ @outarr = sort { $a cmp $b } @inarr;
+ return @outarr;
+}
+
+# Combine 'D' and 'R' states/districts, calculate ME/NE values
+sub get_closedstates_hist {
+ my ($arr1,$arr2,$ifme,$ifmea,$ifmeb,$ifne,$ifnea,$ifneb,$ifnec,$mesum,$nesum,$year) = @_;
+ my @outarr;
+ my @inarr = (@$arr1, @$arr2);
+ $$ifme = 0;
+ $$ifmea = 0;
+ $$ifmeb = 0;
+ $$ifne = 0;
+ $$ifnea = 0;
+ $$ifneb = 0;
+ $$ifnec = 0;
+ foreach my $xa (0..$#inarr){
+  $$ifme  = 4 if ($inarr[$xa] eq 'ME' and $year >= 1972);
+  $$ifme  = 7 if ($inarr[$xa] eq 'ME' and $year < 1972);
+  $$ifmea = 2 if ($inarr[$xa] eq 'ME1' and $year >= 1972);
+  $$ifmea = undef if $year < 1972; 
+  $$ifmeb = 1 if ($inarr[$xa] eq 'ME2' and $year >= 1972);
+  $$ifmeb = undef if $year < 1972;
+  $$ifne  = 8 if ($inarr[$xa] eq 'NE' and $year >= 1992);
+  $$ifne  = 15 if ($inarr[$xa] eq 'NE' and $year < 1992);
+  $$ifnea = 4 if ($inarr[$xa] eq 'NE1' and $year >= 1992);
+  $$ifnea = undef if $year < 1992;
+  $$ifneb = 2 if ($inarr[$xa] eq 'NE2' and $year >= 1992);
+  $$ifneb = undef if $year < 1992;
+  $$ifnec = 1 if ($inarr[$xa] eq 'NE3' and $year >= 1992);
+  $$ifnec = undef if $year < 1992;
+ }
+ if($year >= 1972){
+  $$mesum = $$ifme + $$ifmea + $$ifmeb;
+ } else {
+  $$mesum = $$ifme;
+ }
+ if($year >= 1992){
+  $$nesum = $$ifne + $$ifnea + $$ifneb + $$ifnec;
+ } else {
+  $$nesum = $$ifne;
+ }
  @outarr = sort { $a cmp $b } @inarr;
  return @outarr;
 }
@@ -183,6 +248,7 @@ sub delete_mainenebraska {
 sub build_mat {
  my ($j,$N,$ds,$messum,$nessum,$openvals) = @_;
  my @mainenebraskamat = mene($$messum[0], $$nessum[0], $$messum[1], $$nessum[1], $$messum[2], $$nessum[2]);
+ print "@mainenebraskamat\n";
  my $z = $#mainenebraskamat;
  my @ref;
  my $dumvar;
@@ -256,15 +322,26 @@ sub result_mat {
  my $dsum;
  my $rsum;
  my $tsum;
+ my $total = $#$inarr / $sx;
+ my $needed = ($total % 2 == 0) ? ($total / 2) + 1 : ($total / 2 + 0.5);
+ my $tie = ($total % 2 == 0) ? $total / 2 : undef;
+ my $maxloss = ($total % 2 == 0) ? ($total / 2) - 1 : ($total / 2 - 0.5);
+ print "$total\n";
+ print "$@inarr\n";
+ exit;
  $dsum = 0;
  $rsum = 0;
  $tsum = 0;
- foreach my $x (0..268) {
-  $rsum += $$inarr[($sx+1)*539+$x];
+ foreach my $x (0..$maxloss) {
+    $rsum += $$inarr[($sx+1)*($total+1)+$x];
  }
- $tsum = $$inarr[($sx+1)*539+269];
- foreach my $x (270..538) {
-  $dsum += $$inarr[($sx+1)*539+$x];
+ if(defined $tie){
+    $tsum = $$inarr[($sx+1)*($total + 1)+$tie];
+ } else {
+    $tsum = 0;
+ }
+ foreach my $x ($needed..$total) {
+  $dsum += $$inarr[($sx+1)*($total + 1)+$x];
  }
  my $tot = $rsum + $tsum + $dsum;
  @outarr = ($rsum,$tsum,$dsum,$tot);
@@ -622,12 +699,13 @@ sub get_percent {
 
 sub get_hvals {
   my $year = shift;
-  my %histvals = get_histvalues();
+  my @states = ('AK','AL','AR','AZ','CA','CO','CT','DC','DE','FL','GA','HI','IA','ID','IL','IN','KS','KY','LA','MA','MD','ME','ME1','ME2','MI','MN','MO','MS','MT','NC','ND','NE','NE1','NE2','NE3','NH','NJ','NH','NM','NV','NY','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VA','VT','WA','WI','WV','WY');
   my %hvals;
-  my @histkeys = keys %histvals;
-  foreach my $xh (0..$#histkeys) {
-    if(exists $histvals{$histkeys[$xh]}{$year}) {
-      $hvals{$histkeys[$xh]} = $hvals{$histkeys[$xh]}{$year};
+  my $votes;
+  foreach my $x(0..$#states){
+    $votes = get_histvalues($states[$x],$year);
+    if ($votes != 0){
+      $hvals{$states[$x]} = $votes;
     }
   }
   return %hvals;
