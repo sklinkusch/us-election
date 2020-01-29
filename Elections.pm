@@ -3,7 +3,7 @@ use strict;
 use FindBin;
 use List::Util qw (reduce any all none notall first max maxstr min minstr product sum sum0 pairs unpairs pairkeys pairvalues pairgrep pairfirst pairmap shuffle uniq uniqnum uniqstr);
 use Exporter qw(import);
-our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_closedstates_hist get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent get_hvals);
+our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_closedstates_hist get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene mene_hist result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent get_hvals);
 use lib $FindBin::RealBin;
 use HistElections qw(get_histvalues);
 
@@ -248,7 +248,6 @@ sub delete_mainenebraska {
 sub build_mat {
  my ($j,$N,$ds,$messum,$nessum,$openvals) = @_;
  my @mainenebraskamat = mene($$messum[0], $$nessum[0], $$messum[1], $$nessum[1], $$messum[2], $$nessum[2]);
- print "@mainenebraskamat\n";
  my $z = $#mainenebraskamat;
  my @ref;
  my $dumvar;
@@ -296,7 +295,7 @@ sub mene {
  @nemat = (1,0,0) if ($nes == 7 and $dnes == 0);
  @nemat = (1,0,1) if ($nes == 7 and $dnes < 7 and $dnes > 0);
  @nemat = (1,0,1,1) if (($nes == 3 and $dnes == 3) or ($nes == 5 and $dnes == 5) or ($nes == 6 and $dnes == 6));
- @nemat = (1,1,0,0) if (($nes == 3 and $dnes == 0) or ($nes == 5 and $dnes == 0) or ($nes == 6 and $dmes == 0));
+ @nemat = (1,1,0,0) if (($nes == 3 and $dnes == 0) or ($nes == 5 and $dnes == 0) or ($nes == 6 and $dnes == 0));
  @nemat = (1,1,1,1) if (($nes == 3 and $dnes < 3 and $dnes > 0) or ($nes == 5 and $dnes < 5 and $dnes > 0) or ($nes == 6 and $dnes < 6 and $dnes > 0));
  @nemat = (1,1,1,1,1) if ($nes == 1 or $nes == 2 or $nes == 4);
  @nemat = (1,3,3,3,3,1) if $nes == 0;
@@ -313,6 +312,120 @@ sub mene {
   }
  }
  return(@menemat);
+}
+
+# Calculate ME/NE matrix
+sub mene_hist {
+ my ($mes, $nes, $dmes, $dnes, $rmes, $rnes, $year) = @_;
+ my @memat = maine_hist($mes, $dmes, $rmes, $year);
+ my @nemat = nebraska_hist($nes, $dnes, $rnes, $year);
+ my @menemat;
+ my $up = $#memat + $#nemat;
+ my $max;
+ my $rem;
+ foreach my $zv (0..$up){
+  $max = min($#memat,$zv);
+  $menemat[$zv] = 0;
+  foreach my $zw (0..$max){
+   $rem = $zv - $zw;
+   $menemat[$zv] += ($memat[$zw] * $nemat[$rem]) unless ($rem < 0 or $rem > $#nemat);
+  }
+ }
+ return(@menemat);
+}
+
+# Maine Matrix (historically)
+sub maine_hist {
+  my ($mes, $dmes, $rmes, $year) = @_;
+  my @memat;
+  if ($year % 4 == 0){
+    if ($year >= 1972){
+      @memat = (1) if $mes == 7;
+      @memat = (1,1) if ($mes == 5 or $mes == 6);
+      @memat = (1,2,1) if $mes == 4;
+      @memat = (0,0,1) if ($mes == 3 and $dmes == 3);
+      @memat = (1,0.0) if ($mes == 3 and $dmes == 0);
+      @memat = (1,0,1) if ($mes == 3 and $dmes < 3 and $dmes > 0);
+      @memat = (1,0,1,1) if (($mes == 1 and $dmes == 1) or ($mes == 2 and $dmes == 2));
+      @memat = (1,1,0,1) if (($mes == 1 and $dmes == 0) or ($mes == 2 and $dmes == 0));
+      @memat = (1,2,0,2,1) if $mes == 0;
+    } elsif ($year >= 1964){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1932){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1884){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1864){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1852){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1844){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1832){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1820){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,0,0,0,1) if $mes == 0;
+    } else {
+      @memat = (1);
+    }
+  } else {
+    print "No presidential election in the year $year\n";
+    exit;    
+  }
+  return @memat;
+}
+
+sub nebraska_hist {
+  my ($nes, $dnes, $rnes, $year) = @_;
+  my @nemat;
+  if($year % 4 == 0){
+    if ($year >= 1992){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,1) if ($nes == 11 or $nes == 13 or $nes == 14);
+      @nemat = (1,2,1) if ($nes == 9 or $nes == 10 or $nes == 12);
+      @nemat = (1,3,3,1) if $nes == 8;
+      @nemat = (0,0,1) if ($nes == 7 and $dnes == 7);
+      @nemat = (1,0,0) if ($nes == 7 and $dnes == 0);
+      @nemat = (1,0,1) if ($nes == 7 and $dnes < 7 and $dnes > 0);
+      @nemat = (1,0,1,1) if (($nes == 3 and $dnes == 3) or ($nes == 5 and $dnes == 5) or ($nes == 6 and $dnes == 6));
+      @nemat = (1,1,0,0) if (($nes == 3 and $dnes == 0) or ($nes == 5 and $dnes == 0) or ($nes == 6 and $dnes == 0));
+      @nemat = (1,1,1,1) if (($nes == 3 and $dnes < 3 and $dnes > 0) or ($nes == 5 and $dnes < 5 and $dnes > 0) or ($nes == 6 and $dnes < 6 and $dnes > 0));
+      @nemat = (1,1,1,1,1) if ($nes == 1 or $nes == 2 or $nes == 4);
+      @nemat = (1,3,3,3,3,1) if $nes == 0;
+    } elsif ($year >= 1964){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,0,0,1) if $nes == 0;
+    } elsif ($year >= 1944){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,0,0,0,1) if $nes == 0;
+    } elsif ($year >= 1932){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,0,0,0,0,1) if $nes == 0;
+    } elsif ($year >= 1892){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,0,0,0,0,0,1) if $nes == 0;
+    } elsif ($year >= 1884){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,0,0,1) if $nes == 0;
+    } elsif ($year >= 1868){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,1) if $nes == 0;
+    } else {
+      @nemat = (1);
+    }
+  } else {
+    print "No presidential election in the year $year\n";
+    exit;    
+  }
+  return @nemat;
 }
 
 # Build result matrix with uncorrected probabilities
