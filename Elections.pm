@@ -3,9 +3,7 @@ use strict;
 use FindBin;
 use List::Util qw (reduce any all none notall first max maxstr min minstr product sum sum0 pairs unpairs pairkeys pairvalues pairgrep pairfirst pairmap shuffle uniq uniqnum uniqstr);
 use Exporter qw(import);
-our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_closedstates_hist get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene mene_hist result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent get_hvals);
-use lib $FindBin::RealBin;
-use HistElections qw(get_histvalues);
+our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent);
 
 sub get_statevals {
   my %vals;
@@ -122,48 +120,6 @@ sub get_closedstates {
  }
  $$mesum = $$ifme + $$ifmea + $$ifmeb;
  $$nesum = $$ifne + $$ifnea + $$ifneb + $$ifnec;
- @outarr = sort { $a cmp $b } @inarr;
- return @outarr;
-}
-
-# Combine 'D' and 'R' states/districts, calculate ME/NE values
-sub get_closedstates_hist {
- my ($arr1,$arr2,$ifme,$ifmea,$ifmeb,$ifne,$ifnea,$ifneb,$ifnec,$mesum,$nesum,$year) = @_;
- my @outarr;
- my @inarr = (@$arr1, @$arr2);
- $$ifme = 0;
- $$ifmea = 0;
- $$ifmeb = 0;
- $$ifne = 0;
- $$ifnea = 0;
- $$ifneb = 0;
- $$ifnec = 0;
- foreach my $xa (0..$#inarr){
-  $$ifme  = 4 if ($inarr[$xa] eq 'ME' and $year >= 1972);
-  $$ifme  = 7 if ($inarr[$xa] eq 'ME' and $year < 1972);
-  $$ifmea = 2 if ($inarr[$xa] eq 'ME1' and $year >= 1972);
-  $$ifmea = undef if $year < 1972; 
-  $$ifmeb = 1 if ($inarr[$xa] eq 'ME2' and $year >= 1972);
-  $$ifmeb = undef if $year < 1972;
-  $$ifne  = 8 if ($inarr[$xa] eq 'NE' and $year >= 1992);
-  $$ifne  = 15 if ($inarr[$xa] eq 'NE' and $year < 1992);
-  $$ifnea = 4 if ($inarr[$xa] eq 'NE1' and $year >= 1992);
-  $$ifnea = undef if $year < 1992;
-  $$ifneb = 2 if ($inarr[$xa] eq 'NE2' and $year >= 1992);
-  $$ifneb = undef if $year < 1992;
-  $$ifnec = 1 if ($inarr[$xa] eq 'NE3' and $year >= 1992);
-  $$ifnec = undef if $year < 1992;
- }
- if($year >= 1972){
-  $$mesum = $$ifme + $$ifmea + $$ifmeb;
- } else {
-  $$mesum = $$ifme;
- }
- if($year >= 1992){
-  $$nesum = $$ifne + $$ifnea + $$ifneb + $$ifnec;
- } else {
-  $$nesum = $$ifne;
- }
  @outarr = sort { $a cmp $b } @inarr;
  return @outarr;
 }
@@ -314,119 +270,6 @@ sub mene {
  return(@menemat);
 }
 
-# Calculate ME/NE matrix
-sub mene_hist {
- my ($mes, $nes, $dmes, $dnes, $rmes, $rnes, $year) = @_;
- my @memat = maine_hist($mes, $dmes, $rmes, $year);
- my @nemat = nebraska_hist($nes, $dnes, $rnes, $year);
- my @menemat;
- my $up = $#memat + $#nemat;
- my $max;
- my $rem;
- foreach my $zv (0..$up){
-  $max = min($#memat,$zv);
-  $menemat[$zv] = 0;
-  foreach my $zw (0..$max){
-   $rem = $zv - $zw;
-   $menemat[$zv] += ($memat[$zw] * $nemat[$rem]) unless ($rem < 0 or $rem > $#nemat);
-  }
- }
- return(@menemat);
-}
-
-# Maine Matrix (historically)
-sub maine_hist {
-  my ($mes, $dmes, $rmes, $year) = @_;
-  my @memat;
-  if ($year % 4 == 0){
-    if ($year >= 1972){
-      @memat = (1) if $mes == 7;
-      @memat = (1,1) if ($mes == 5 or $mes == 6);
-      @memat = (1,2,1) if $mes == 4;
-      @memat = (0,0,1) if ($mes == 3 and $dmes == 3);
-      @memat = (1,0.0) if ($mes == 3 and $dmes == 0);
-      @memat = (1,0,1) if ($mes == 3 and $dmes < 3 and $dmes > 0);
-      @memat = (1,0,1,1) if (($mes == 1 and $dmes == 1) or ($mes == 2 and $dmes == 2));
-      @memat = (1,1,0,1) if (($mes == 1 and $dmes == 0) or ($mes == 2 and $dmes == 0));
-      @memat = (1,2,0,2,1) if $mes == 0;
-    } elsif ($year >= 1964){
-      @memat = (1) if $mes == 7;
-      @memat = (1,0,0,0,1) if $mes == 0;
-    } elsif ($year >= 1932){
-      @memat = (1) if $mes == 7;
-      @memat = (1,0,0,0,0,1) if $mes == 0;
-    } elsif ($year >= 1884){
-      @memat = (1) if $mes == 7;
-      @memat = (1,0,0,0,0,0,1) if $mes == 0;
-    } elsif ($year >= 1864){
-      @memat = (1) if $mes == 7;
-      @memat = (1,0,0,0,0,0,0,1) if $mes == 0;
-    } elsif ($year >= 1852){
-      @memat = (1) if $mes == 7;
-      @memat = (1,0,0,0,0,0,0,0,1) if $mes == 0;
-    } elsif ($year >= 1844){
-      @memat = (1) if $mes == 7;
-      @memat = (1,0,0,0,0,0,0,0,0,1) if $mes == 0;
-    } elsif ($year >= 1832){
-      @memat = (1) if $mes == 7;
-      @memat = (1,0,0,0,0,0,0,0,0,0,1) if $mes == 0;
-    } elsif ($year >= 1820){
-      @memat = (1) if $mes == 7;
-      @memat = (1,0,0,0,0,0,0,0,0,1) if $mes == 0;
-    } else {
-      @memat = (1);
-    }
-  } else {
-    print "No presidential election in the year $year\n";
-    exit;    
-  }
-  return @memat;
-}
-
-sub nebraska_hist {
-  my ($nes, $dnes, $rnes, $year) = @_;
-  my @nemat;
-  if($year % 4 == 0){
-    if ($year >= 1992){
-      @nemat = (1) if $nes == 15;
-      @nemat = (1,1) if ($nes == 11 or $nes == 13 or $nes == 14);
-      @nemat = (1,2,1) if ($nes == 9 or $nes == 10 or $nes == 12);
-      @nemat = (1,3,3,1) if $nes == 8;
-      @nemat = (0,0,1) if ($nes == 7 and $dnes == 7);
-      @nemat = (1,0,0) if ($nes == 7 and $dnes == 0);
-      @nemat = (1,0,1) if ($nes == 7 and $dnes < 7 and $dnes > 0);
-      @nemat = (1,0,1,1) if (($nes == 3 and $dnes == 3) or ($nes == 5 and $dnes == 5) or ($nes == 6 and $dnes == 6));
-      @nemat = (1,1,0,0) if (($nes == 3 and $dnes == 0) or ($nes == 5 and $dnes == 0) or ($nes == 6 and $dnes == 0));
-      @nemat = (1,1,1,1) if (($nes == 3 and $dnes < 3 and $dnes > 0) or ($nes == 5 and $dnes < 5 and $dnes > 0) or ($nes == 6 and $dnes < 6 and $dnes > 0));
-      @nemat = (1,1,1,1,1) if ($nes == 1 or $nes == 2 or $nes == 4);
-      @nemat = (1,3,3,3,3,1) if $nes == 0;
-    } elsif ($year >= 1964){
-      @nemat = (1) if $nes == 15;
-      @nemat = (1,0,0,0,0,1) if $nes == 0;
-    } elsif ($year >= 1944){
-      @nemat = (1) if $nes == 15;
-      @nemat = (1,0,0,0,0,0,1) if $nes == 0;
-    } elsif ($year >= 1932){
-      @nemat = (1) if $nes == 15;
-      @nemat = (1,0,0,0,0,0,0,1) if $nes == 0;
-    } elsif ($year >= 1892){
-      @nemat = (1) if $nes == 15;
-      @nemat = (1,0,0,0,0,0,0,0,1) if $nes == 0;
-    } elsif ($year >= 1884){
-      @nemat = (1) if $nes == 15;
-      @nemat = (1,0,0,0,0,1) if $nes == 0;
-    } elsif ($year >= 1868){
-      @nemat = (1) if $nes == 15;
-      @nemat = (1,0,0,1) if $nes == 0;
-    } else {
-      @nemat = (1);
-    }
-  } else {
-    print "No presidential election in the year $year\n";
-    exit;    
-  }
-  return @nemat;
-}
 
 # Build result matrix with uncorrected probabilities
 sub result_mat {
@@ -435,26 +278,15 @@ sub result_mat {
  my $dsum;
  my $rsum;
  my $tsum;
- my $total = $#$inarr / $sx;
- my $needed = ($total % 2 == 0) ? ($total / 2) + 1 : ($total / 2 + 0.5);
- my $tie = ($total % 2 == 0) ? $total / 2 : undef;
- my $maxloss = ($total % 2 == 0) ? ($total / 2) - 1 : ($total / 2 - 0.5);
- print "$total\n";
- print "$@inarr\n";
- exit;
  $dsum = 0;
  $rsum = 0;
  $tsum = 0;
- foreach my $x (0..$maxloss) {
-    $rsum += $$inarr[($sx+1)*($total+1)+$x];
+ foreach my $x (0..268) {
+    $rsum += $$inarr[($sx+1)*539+$x];
  }
- if(defined $tie){
-    $tsum = $$inarr[($sx+1)*($total + 1)+$tie];
- } else {
-    $tsum = 0;
- }
- foreach my $x ($needed..$total) {
-  $dsum += $$inarr[($sx+1)*($total + 1)+$x];
+  $tsum = $$inarr[($sx+1)*539+269];
+ foreach my $x (270..538) {
+  $dsum += $$inarr[($sx+1)*539+$x];
  }
  my $tot = $rsum + $tsum + $dsum;
  @outarr = ($rsum,$tsum,$dsum,$tot);
@@ -808,20 +640,6 @@ sub get_percent {
     $perc{$state} = { "D" => $dem, "R" => $rep };
   }
   return %perc;
-}
-
-sub get_hvals {
-  my $year = shift;
-  my @states = ('AK','AL','AR','AZ','CA','CO','CT','DC','DE','FL','GA','HI','IA','ID','IL','IN','KS','KY','LA','MA','MD','ME','ME1','ME2','MI','MN','MO','MS','MT','NC','ND','NE','NE1','NE2','NE3','NH','NJ','NH','NM','NV','NY','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VA','VT','WA','WI','WV','WY');
-  my %hvals;
-  my $votes;
-  foreach my $x(0..$#states){
-    $votes = get_histvalues($states[$x],$year);
-    if ($votes != 0){
-      $hvals{$states[$x]} = $votes;
-    }
-  }
-  return %hvals;
 }
 
 1;

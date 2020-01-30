@@ -1,8 +1,9 @@
 package HistElections;
 use strict;
+use List::Util qw (reduce any all none notall first max maxstr min minstr product sum sum0 pairs unpairs pairkeys pairvalues pairgrep pairfirst pairmap shuffle uniq uniqnum uniqstr);
 use FindBin;
 use Exporter qw(import);
-our @EXPORT_OK = qw(get_histvalues);
+our @EXPORT_OK = qw(get_hvals get_parstates check_par check_states get_closedstates get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat result_mat);
 
 sub get_histvalues {
   my %AK = (
@@ -1938,8 +1939,8 @@ sub get_histvalues {
     1868 => 4,
     1864 => 4,
     1860 => 4,
-    1846 => 4,
-    1842 => 4,
+    1856 => 4,
+    1852 => 4,
     1848 => 4,
     1844 => 4,
     1840 => 4,
@@ -2587,5 +2588,397 @@ sub get_histvalues {
     return 0;
   }
 }
+
+sub get_hvals {
+  my $year = shift;
+  my @states = ('AK','AL','AR','AZ','CA','CO','CT','DC','DE','FL','GA','HI','IA','ID','IL','IN','KS','KY','LA','MA','MD','ME','ME1','ME2','MI','MN','MO','MS','MT','NC','ND','NE','NE1','NE2','NE3','NH','NJ','NH','NM','NV','NY','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VA','VT','WA','WI','WV','WY');
+  my %hvals;
+  my $votes;
+  foreach my $x(0..$#states){
+    $votes = get_histvalues($states[$x],$year);
+    if ($votes != 0){
+      $hvals{$states[$x]} = $votes;
+    }
+  }
+  return %hvals;
+}
+
+sub get_parstates {
+  my ($datfile,$sign) = @_;
+  my @arr;
+  open (DATA, "$datfile") || die "Cannot open data file\n";
+  while(my $line = <DATA>){
+    chomp($line);
+    my @linearray = split(/:[\t]?/,$line);
+    if($linearray[1] =~ /$sign/){
+      push(@arr,$linearray[0]);
+    } else {
+      next;
+    }
+  }
+  close (DATA);
+  return @arr;
+}
+
+sub check_par {
+ my ($states, $allstates) = @_;
+ my $num;
+ foreach my $xxy (0..$#$states){
+   $num = 0;
+   foreach my $xxz (0..$#$allstates){
+     $num = 1 if ($$states[$xxy] eq $$allstates[$xxz]);
+   }
+   if($num == 1){
+     next;
+   } else {
+     $$states[$xxy] = undef;
+     next;
+   }
+ }
+  my $nrosp = 0;
+  foreach my $bb (0..$#$states){
+    my $vali = $bb - $nrosp;
+    if(defined $$states[$vali]){
+      next;
+    }else{
+      splice(@$states,$vali,1);
+      $nrosp++;
+    }
+  }
+  my $mesum = 0;
+  my $nesum = 0;
+  my $me = 0; my $mea = 0; my $meb = 0; my $mex = 0; 
+  my $ne = 0; my $nea = 0; my $neb = 0; my $nec = 0;
+  foreach my $xxd (0..$#$states){
+    $me  = 1 if $$states[$xxd] eq 'ME';
+    $mea = 1 if $$states[$xxd] eq 'ME1';
+    $meb = 1 if $$states[$xxd] eq 'ME2';
+    $mex = 1 if $$states[$xxd] =~ /ME[0-9]{1}/;
+    $ne  = 1 if $$states[$xxd] eq 'NE';
+    $nea = 1 if $$states[$xxd] eq 'NE1';
+    $neb = 1 if $$states[$xxd] eq 'NE2';
+    $nec = 1 if $$states[$xxd] eq 'NE3';
+  }
+  $nesum += 1 if $nec == 1;
+  $nesum += 2 if $neb == 1;
+  $nesum += 4 if $nea == 1;
+  $nesum += 8 if $ne  == 1;
+  $mesum += 1 if $meb == 1;
+  $mesum += 2 if $mea == 1;
+  $mesum += 4 if $me  == 1;
+  return ($mesum,$nesum,$me,$mea,$meb,$mex,$ne,$nea,$neb,$nec);
+}
+
+sub check_states {
+ my @states = @_;
+ my @states_sorted = sort { $a cmp $b } @states;
+ my $end = $#states_sorted - 1;
+ my $y;
+ foreach my $x (0..$end){
+  $y = $x + 1;
+  if ( $states_sorted[$x] =~ /$states_sorted[$y]/ ){
+   print "Two states identical: $states_sorted[$x] and $states_sorted[$y]\n";
+   exit;
+  }
+ }
+}
+
+# Combine 'D' and 'R' states/districts, calculate ME/NE values
+sub get_closedstates {
+ my ($arr1,$arr2,$ifme,$ifmea,$ifmeb,$ifne,$ifnea,$ifneb,$ifnec,$mesum,$nesum,$year) = @_;
+ my @outarr;
+ my @inarr = (@$arr1, @$arr2);
+ $$ifme = 0;
+ $$ifmea = 0;
+ $$ifmeb = 0;
+ $$ifne = 0;
+ $$ifnea = 0;
+ $$ifneb = 0;
+ $$ifnec = 0;
+ foreach my $xa (0..$#inarr){
+  $$ifme  = 4 if ($inarr[$xa] eq 'ME' and $year >= 1972);
+  $$ifme  = 7 if ($inarr[$xa] eq 'ME' and $year < 1972);
+  $$ifmea = 2 if ($inarr[$xa] eq 'ME1' and $year >= 1972);
+  $$ifmea = undef if $year < 1972; 
+  $$ifmeb = 1 if ($inarr[$xa] eq 'ME2' and $year >= 1972);
+  $$ifmeb = undef if $year < 1972;
+  $$ifne  = 8 if ($inarr[$xa] eq 'NE' and $year >= 1992);
+  $$ifne  = 15 if ($inarr[$xa] eq 'NE' and $year < 1992);
+  $$ifnea = 4 if ($inarr[$xa] eq 'NE1' and $year >= 1992);
+  $$ifnea = undef if $year < 1992;
+  $$ifneb = 2 if ($inarr[$xa] eq 'NE2' and $year >= 1992);
+  $$ifneb = undef if $year < 1992;
+  $$ifnec = 1 if ($inarr[$xa] eq 'NE3' and $year >= 1992);
+  $$ifnec = undef if $year < 1992;
+ }
+ if($year >= 1972){
+  $$mesum = $$ifme + $$ifmea + $$ifmeb;
+ } else {
+  $$mesum = $$ifme;
+ }
+ if($year >= 1992){
+  $$nesum = $$ifne + $$ifnea + $$ifneb + $$ifnec;
+ } else {
+  $$nesum = $$ifne;
+ }
+ @outarr = sort { $a cmp $b } @inarr;
+ return @outarr;
+}
+
+# Describe open states/districts
+sub get_openstates {
+  my ($statevals,$allstates,$closedstates,$swingsts,$openvalx) = @_;
+  my $var;
+  foreach my $sx (0..$#$allstates) {
+    $var = 0;
+    foreach my $cx (0..$#$closedstates){
+      if ( $$allstates[$sx] eq $$closedstates[$cx] ){
+        $var = 1;
+        last;
+      }else{
+        next;
+      }
+    }
+    if ($var == 0){
+      push (@$swingsts,$$allstates[$sx]);
+      push (@$openvalx,$$statevals{$$allstates[$sx]});
+    }
+  }
+}
+
+# get safe values
+sub get_safeval {
+  my ($statevals,$parstates) = @_;
+  my $val = 0;
+  foreach my $x (0..$#$parstates) {
+    $val += $$statevals{$$parstates[$x]};
+  }
+  return $val;
+}
+
+#  get number of open electors
+sub get_swingperm {
+  my ($statevals,$swingsts,$nrop) = @_;
+  my $numm = 0;
+  foreach my $x (0..$#$swingsts){
+    $numm += $$statevals{$$swingsts[$x]};
+    $$nrop *= 2;
+  }
+  return $numm;
+}
+
+# Write numbers with commas (as 1,000 separator)
+sub commify {
+ my $text = $_[0];
+ $text =~ /([0-9]*)/;
+ my $before = $1;
+ my $erofeb = reverse $before;
+ $erofeb =~ s/(\d\d\d)(?=\d)(?!\d*\.)/$1\,/g;
+ my $befored = scalar reverse $erofeb;
+ my $res = sprintf("% 26s",$befored);
+ return $res;
+}
+
+# sort states alphabetically
+sub sort_states {
+  my @states = @_;
+  my @states_sorted = sort { $a cmp $b } @states;
+  my $statestring = join(' ',@states_sorted);
+  return $statestring;
+}
+
+# Delete Maine and Nebraska from Open State List
+sub delete_mainenebraska {
+ my @inarr = @_;
+ my $half = ($#inarr + 1)/2 - 1;
+ my $halfpo = $half + 1;
+ my @states = @inarr[0..$half];
+ my @num = @inarr[$halfpo..$#inarr];
+ my @outarr;
+ foreach my $xxc (0..$#states){
+   push(@outarr,$num[$xxc]) unless $states[$xxc] =~ /[MN]{1}E/;
+ }
+ return @outarr;
+}
+
+# Build original matrix to calculate uncorrected probabilities
+sub build_mat {
+ my ($j,$N,$ds,$messum,$nessum,$openvals,$year) = @_;
+ my @mainenebraskamat = mene($$messum[0], $$nessum[0], $$messum[1], $$nessum[1], $$messum[2], $$nessum[2],$year);
+ my $z = $#mainenebraskamat;
+ my @ref;
+ my $dumvar;
+ my $dummvar;
+ my $t = $N + 1;
+ my $k = $j - 1;
+ foreach my $y (0..$N){
+  if ($y >= $ds and $y <= ($ds + $z)){
+   $ref[$y] = $mainenebraskamat[$y-$ds];
+  }else{
+   $ref[$y] = 0;
+  }
+ }
+ foreach my $x (1..$j){
+  foreach my $y (0..$N){
+   if(($y - $$openvals[$x-1]) >= 0){
+    $ref[$x*$t+$y] = $ref[($x-1)*$t+$y] + $ref[($x-1)*$t+($y-$$openvals[$x-1])];
+   }else{
+    $ref[$x*$t+$y] = $ref[($x-1)*$t+$y];
+   }
+  }
+ }
+return(@ref);
+}
+
+# Calculate ME/NE matrix
+sub mene {
+ my ($mes, $nes, $dmes, $dnes, $rmes, $rnes, $year) = @_;
+ my @memat = maine($mes, $dmes, $rmes, $year);
+ my @nemat = nebraska($nes, $dnes, $rnes, $year);
+ my @menemat;
+ my $up = $#memat + $#nemat;
+ my $max;
+ my $rem;
+ foreach my $zv (0..$up){
+  $max = min($#memat,$zv);
+  $menemat[$zv] = 0;
+  foreach my $zw (0..$max){
+   $rem = $zv - $zw;
+   $menemat[$zv] += ($memat[$zw] * $nemat[$rem]) unless ($rem < 0 or $rem > $#nemat);
+  }
+ }
+ return(@menemat);
+}
+
+# Maine Matrix (historically)
+sub maine {
+  my ($mes, $dmes, $rmes, $year) = @_;
+  my @memat;
+  if ($year % 4 == 0){
+    if ($year >= 1972){
+      @memat = (1) if $mes == 7;
+      @memat = (1,1) if ($mes == 5 or $mes == 6);
+      @memat = (1,2,1) if $mes == 4;
+      @memat = (0,0,1) if ($mes == 3 and $dmes == 3);
+      @memat = (1,0.0) if ($mes == 3 and $dmes == 0);
+      @memat = (1,0,1) if ($mes == 3 and $dmes < 3 and $dmes > 0);
+      @memat = (1,0,1,1) if (($mes == 1 and $dmes == 1) or ($mes == 2 and $dmes == 2));
+      @memat = (1,1,0,1) if (($mes == 1 and $dmes == 0) or ($mes == 2 and $dmes == 0));
+      @memat = (1,2,0,2,1) if $mes == 0;
+    } elsif ($year >= 1964){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1932){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1884){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1864){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1852){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1844){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1832){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,0,0,0,0,1) if $mes == 0;
+    } elsif ($year >= 1820){
+      @memat = (1) if $mes == 7;
+      @memat = (1,0,0,0,0,0,0,0,0,1) if $mes == 0;
+    } else {
+      @memat = (1);
+    }
+  } else {
+    print "No presidential election in the year $year\n";
+    exit;    
+  }
+  return @memat;
+}
+
+sub nebraska {
+  my ($nes, $dnes, $rnes, $year) = @_;
+  my @nemat;
+  if($year % 4 == 0){
+    if ($year >= 1992){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,1) if ($nes == 11 or $nes == 13 or $nes == 14);
+      @nemat = (1,2,1) if ($nes == 9 or $nes == 10 or $nes == 12);
+      @nemat = (1,3,3,1) if $nes == 8;
+      @nemat = (0,0,1) if ($nes == 7 and $dnes == 7);
+      @nemat = (1,0,0) if ($nes == 7 and $dnes == 0);
+      @nemat = (1,0,1) if ($nes == 7 and $dnes < 7 and $dnes > 0);
+      @nemat = (1,0,1,1) if (($nes == 3 and $dnes == 3) or ($nes == 5 and $dnes == 5) or ($nes == 6 and $dnes == 6));
+      @nemat = (1,1,0,0) if (($nes == 3 and $dnes == 0) or ($nes == 5 and $dnes == 0) or ($nes == 6 and $dnes == 0));
+      @nemat = (1,1,1,1) if (($nes == 3 and $dnes < 3 and $dnes > 0) or ($nes == 5 and $dnes < 5 and $dnes > 0) or ($nes == 6 and $dnes < 6 and $dnes > 0));
+      @nemat = (1,1,1,1,1) if ($nes == 1 or $nes == 2 or $nes == 4);
+      @nemat = (1,3,3,3,3,1) if $nes == 0;
+    } elsif ($year >= 1964){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,0,0,1) if $nes == 0;
+    } elsif ($year >= 1944){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,0,0,0,1) if $nes == 0;
+    } elsif ($year >= 1932){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,0,0,0,0,1) if $nes == 0;
+    } elsif ($year >= 1892){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,0,0,0,0,0,1) if $nes == 0;
+    } elsif ($year >= 1884){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,0,0,1) if $nes == 0;
+    } elsif ($year >= 1868){
+      @nemat = (1) if $nes == 15;
+      @nemat = (1,0,0,1) if $nes == 0;
+    } else {
+      @nemat = (1);
+    }
+  } else {
+    print "No presidential election in the year $year\n";
+    exit;    
+  }
+  return @nemat;
+}
+
+# Build result matrix with uncorrected probabilities
+sub result_mat {
+ my ($inarr,$sx,$total) = @_;
+ my @outarr;
+ my $dsum;
+ my $rsum;
+ my $tsum;
+ my $needed; my $tie; my $maxloss;
+ if ($total % 2 == 0){
+   $needed = ($total / 2) +  1;
+   $tie = ($total / 2);
+   $maxloss = ($total / 2) - 1;
+ } else {
+   $needed = ($total / 2) + 0.5;
+   $tie = undef;
+   $maxloss = ($total / 2) - 0.5;
+ }
+ $dsum = 0;
+ $rsum = 0;
+ $tsum = 0;
+ foreach my $x (0..$maxloss) {
+    $rsum += $$inarr[($sx+1)*($total+1)+$x];
+ }
+ if(defined $tie){
+    $tsum = $$inarr[($sx+1)*($total + 1)+$tie];
+ } else {
+    $tsum = 0;
+ }
+ foreach my $x ($needed..$total) {
+  $dsum += $$inarr[($sx+1)*($total + 1)+$x];
+ }
+ my $tot = $rsum + $tsum + $dsum;
+ @outarr = ($rsum,$tsum,$dsum,$tot);
+ return(@outarr);
+}
+
 
 1;

@@ -6,19 +6,17 @@ use Algorithm::Combinatorics qw/variations_with_repetition/;
 use List::Util qw(first);
 use FindBin;
 use lib $FindBin::RealBin;
-use Elections qw(get_statevals get_parstates check_par check_states get_closedstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles);
+use HistElections qw(get_hvals get_parstates check_par check_states get_closedstates get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat result_mat);
 
-if ($#ARGV < 0){
-	print "Usage: waystowhitehouse.pl <data file>\n";
+if ($#ARGV < 1){
+	print "Usage: presprob-hist.pl <year> <data file>\n";
 	print "data file contains all states/districts with D/R/X notifier\n";
 	exit;
 }
-my $datfile = $ARGV[0];
+my $year = $ARGV[0];
+my $datfile = $ARGV[1];
 
-# get the states and the respective number of electors
-my %statevals = get_statevals();
-
-# put the hash keys and values into two arrays (sorted)
+my %statevals = get_hvals($year);
 my @allstates = sort { $statevals{$b} <=> $statevals{$a} || $a cmp $b } keys %statevals;
 my @valstates = @statevals{@allstates};
 my @demstates = get_parstates($datfile,'D');
@@ -35,10 +33,10 @@ my $ifneb;
 my $ifnec;
 my $mesum;
 my $nesum;
-my @closedstates = get_closedstates(\@demstates,\@repstates,\$ifme,\$ifmea,\$ifmeb,\$ifne,\$ifnea,\$ifneb,\$ifnec,\$mesum,\$nesum);
+my @closedstates = get_closedstates(\@demstates,\@repstates,\$ifme,\$ifmea,\$ifmeb,\$ifne,\$ifnea,\$ifneb,\$ifnec,\$mesum,\$nesum, $year);
 my @openvalx;
 my @swingsts;
-Elections::get_openstates(\%statevals,\@allstates,\@closedstates,\@swingsts,\@openvalx);
+get_openstates(\%statevals,\@allstates,\@closedstates,\@swingsts,\@openvalx);
 my @openvals = sort { $b <=> $a } @openvalx;
 my $perms = $#swingsts + 1;
 my $demsafe = get_safeval(\%statevals,\@demstates);
@@ -76,9 +74,9 @@ my $ifmaineclosed;
 my $ifnebraskaclosed;
 my @messum = ($mesum, $dmesum, $rmesum);
 my @nessum = ($nesum, $dnesum, $rnesum);
-my @demmat = build_mat($#swinr+1,538,$demsafe,\@messum,\@nessum,\@openvals);
-my @repmat = build_mat($#swinr+1,538,$repsafe,\@messum,\@nessum,\@openvals);
-my @resamat = result_mat(\@demmat,$#swinr);
+my @demmat = build_mat($#swinr+1,$total,$demsafe,\@messum,\@nessum,\@openvals,$year);
+my @repmat = build_mat($#swinr+1,$total,$repsafe,\@messum,\@nessum,\@openvals,$year);
+my @resamat = result_mat(\@demmat,$#swinr,$total);
 my $szenarios = $resamat[3];
 my $nonsens = $nrop - $szenarios;
 my $nonsensx = commify($nonsens);
@@ -106,34 +104,4 @@ my $summrx = commify($summr);
 my $repprob = 100 * $summr / $szenarios;
 if ($summr != 0){
 	printf("Rep. probability:  %8.4f %%  %26s\n", $repprob, $summrx);
-}
-if($swino < 20 and $swino > 0){
-
-	# Calculate and print corrected probabilities (and all the variations)
-	my $iter = variations_with_repetition([qw/D R/], $perms);
-	my @statedesc = get_statedesc(@swingsts);
-	my $head = get_head($swino,\@statedesc,\@openvals);
-	my @permas;
-	my @safe = ($demsafe, $repsafe, $needed);
-	my @winners;
-	my $count = 0;
-
-	while ( my $p = $iter->next) {
-		build_permas('V',$count,$p,$swino,\%statevals,\@swingsts,\@safe,\@permas,\@winners);
-		$count++;
-	}
-	my @permbs;
-	my @winna;
-	modify_maine($nrop, $swino, $mesum, $dmesum, $rmesum, \@swingsts, \@permas, \@permbs, \@winners, \@winna);
-	my $dummyvar = ($#permbs + 1)/$swino;
-	my @permcs;
-	my @winnb;
-	modify_nebraska($dummyvar,$swino,$nesum,$dnesum,$rnesum,\@swingsts,\@permbs,\@permcs,\@winna,\@winnb);
-	$dummyvar = ($#permcs + 1)/$swino;
-	print_info(@winnb);
-	my ($nome, $nomex) = get_nome(@swingsts);
-	my @linea = modify_results($dummyvar,$swino,$nome,$nomex,$demsafe,$repsafe,$needed,\@permcs,\%statevals,\@swingsts);
-	delete_doubles($dummyvar,\@linea);
-	print $head;
-	print join('',@linea);
 }

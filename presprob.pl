@@ -23,8 +23,8 @@ my @allstates = sort { $statevals{$b} <=> $statevals{$a} || $a cmp $b } keys %st
 my @valstates = @statevals{@allstates};
 my @demstates = get_parstates($datfile,'D');
 my @repstates = get_parstates($datfile,'R');
-my ($dmesum,$dnesum,$dme,$dmea,$dmeb,$dmex,$dne,$dnea,$dneb,$dnec) = check_par(@demstates);
-my ($rmesum,$rnesum,$rme,$rmea,$rmeb,$rmex,$rne,$rnea,$rneb,$rnec) = check_par(@repstates);
+my ($dmesum,$dnesum,$dme,$dmea,$dmeb,$dmex,$dne,$dnea,$dneb,$dnec) = check_par(\@demstates, \@allstates);
+my ($rmesum,$rnesum,$rme,$rmea,$rmeb,$rmex,$rne,$rnea,$rneb,$rnec) = check_par(\@repstates, \@allstates);
 check_states(@demstates,@repstates);
 my $ifme;
 my $ifmea;
