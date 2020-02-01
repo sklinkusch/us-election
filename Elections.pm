@@ -3,7 +3,7 @@ use strict;
 use FindBin;
 use List::Util qw (reduce any all none notall first max maxstr min minstr product sum sum0 pairs unpairs pairkeys pairvalues pairgrep pairfirst pairmap shuffle uniq uniqnum uniqstr);
 use Exporter qw(import);
-our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent);
+our @EXPORT_OK = qw(get_statevals get_parstates check_par check_states get_closedstates get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat mene result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent closed_simple build_matpc commify_float);
 
 sub get_statevals {
   my %vals;
@@ -23,7 +23,7 @@ sub get_parstates {
   open (DATA, "$datfile") || die "Cannot open data file\n";
   while(my $line = <DATA>){
     chomp($line);
-    my @linearray = split(/:[\t]?/,$line);
+    my @linearray = split(/:[\t ]+/,$line);
     if($linearray[1] =~ /$sign/){
       push(@arr,$linearray[0]);
     } else {
@@ -169,6 +169,9 @@ sub get_swingperm {
 # Write numbers with commas (as 1,000 separator)
 sub commify {
  my $text = $_[0];
+#  if ($text < 0){
+#    return 0;
+#  }
  $text =~ /([0-9]*)/;
  my $before = $1;
  my $erofeb = reverse $before;
@@ -630,16 +633,70 @@ sub delete_doubles {
 }
 
 sub get_percent {
-  my %perc;
-  open(PERC,"./prespercent.dat") || die "Cannot open percentage file\n";
+  my ($percfile,$demperc,$repperc) = @_;
+  open(PERC,$percfile) || die "Cannot open percentage file\n";
   while (my $line = <PERC>){
-    $line =~ /([A-Z]{2}[0-9]?):[\t]?([0-9\.]*)[\t](0-9\.)*/;
+    $line =~ /([A-Z]{2}[0-9]?)[ \t]+([0-9\.]*)[ \t]+([0-9\.]*)/;
     my $state = $1;
     my $dem = $2;
     my $rep = $3;
-    $perc{$state} = { "D" => $dem, "R" => $rep };
+    $$demperc{$state} = $dem;
+    $$repperc{$state} = $rep;
   }
-  return %perc;
+  close(PERC);
+}
+
+# Combine 'D' and 'R' states/districts, calculate ME/NE values
+sub closed_simple {
+ my ($arr1,$arr2) = @_;
+ my @outarr;
+ my @inarr = (@$arr1, @$arr2);
+ @outarr = sort { $a cmp $b } @inarr;
+ return @outarr;
+}
+
+# Build original matrix to calculate uncorrected probabilities
+sub build_matpc {
+ my ($j,$N,$ds,$openvals, $openstates, $sperc) = @_;
+ my @ref;
+ my $dumvar;
+ my $dummvar;
+ my $t = $N + 1;
+ my $k = $j - 1;
+ my @fperc;
+ foreach my $xx (0..$#$openstates){
+   $fperc[$xx] = (2 * $$sperc{$$openstates[$xx]}) - 100;;
+ }
+ foreach my $y (0..$N){
+  if ($y == $ds){
+   $ref[$y] = 1;
+  }else{
+   $ref[$y] = 0;
+  }
+ }
+ foreach my $x (1..$j){
+  foreach my $y (0..$N){
+   if(($y - $$openvals[$x-1]) >= 0){
+     $ref[$x*$t+$y] = ((1 - (0.01 * $fperc[$x-1])) * $ref[($x-1)*$t+$y]) + ((1 + (0.01 * $fperc[$x-1])) * $ref[($x-1)* $t + ($y - $$openvals[$x-1])]);
+   }else{
+    $ref[$x*$t+$y] = $ref[($x-1)*$t+$y];
+   }
+  }
+ }
+return(@ref);
+}
+
+# Write numbers with commas (as 1,000 separator)
+sub commify_float {
+ my $text = $_[0];
+ $text =~ /([0-9]*)\.([0-9]+)/;
+ my $before = $1;
+ my $after = $2;
+ my $erofeb = reverse $before;
+ $erofeb =~ s/(\d\d\d)(?=\d)(?!\d*\.)/$1\,/g;
+ my $befored = scalar reverse $erofeb;
+ my $res = sprintf("% 26s.%4s",$befored,$after);
+ return $res;
 }
 
 1;
