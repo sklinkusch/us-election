@@ -639,6 +639,7 @@ sub modify_results {
 sub get_mustwin {
 	my ($linea,$statedesc) = @_;
 	my @results;
+	my @return_array;
 	foreach my $x (0..$#$linea){
 		$$linea[$x] =~ /([DRX] )+ (DEM|REP|TIE)  [\d]{3}:[ \d]{3} x [ \d]+/;
 		my @states = split(/ /,$1);
@@ -650,6 +651,44 @@ sub get_mustwin {
 		}
 		push(@results,%desc);
 	}
+	my @demneeded;
+	my @repneeded;
+	foreach my $y (0..$#$statedesc){
+		my $current_state = $$statedesc[$y];
+		my $dnumline = 0;
+		my $rnumline = 0;
+		my $dlast_result = "";
+		my $rlast_result = "";
+		foreach my $z (0..$#results){
+			if($results[$z]{"winner"} eq "DEM" and $dnumline == 0){
+				$dlast_result = $results[$z]{$current_state};
+				$dnumline++;
+			} elsif ($results[$z]{"winner"} eq "REP" and $rnumline == 0){
+				$rlast_result = $results[$z]{$current_state};
+				$rnumline++;
+			} elsif ($results[$z]{"winner"} eq "DEM"){
+				$dlast_result = "none" if ($results[$z]{$current_state} != $dlast_result);
+				$dnumline++;
+			} elsif ($results[$z]{"winner"} eq "REP"){
+				$rlast_result = "none" if ($results[$z]{$current_state} != $rlast_result);
+				$rnumline++;
+			}
+		}
+		push(@demneeded, $current_state) if ($dlast_result eq 'D');
+		push(@repneeded, $current_state) if ($rlast_result eq 'R');
+	}
+	my $dret_string = join(',', @demneeded);
+	my $rret_string = join(',', @repneeded);
+	my $return_index = 0;
+	if ($#demneeded > -1){
+		$return_array[$return_index] = sprintf("Needed for victory (D): %s\n", $dret_string);
+		$return_index++;
+	}
+	if ($#repneeded > -1){
+		$return_array[$return_index] = sprintf("Needed for victory (R): %s\n", $rret_string);
+		$return_index++;
+	}
+	return @return_array;
 }
 
 # Delete double lines
