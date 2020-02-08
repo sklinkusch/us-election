@@ -6,7 +6,7 @@ use Algorithm::Combinatorics qw/variations_with_repetition/;
 use List::Util qw(first);
 use FindBin;
 use lib $FindBin::RealBin;
-use Elections qw(get_statevals get_parstates check_par check_states get_closedstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles);
+use Elections qw(get_statevals get_parstates check_par check_states get_closedstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_mustwin);
 
 if ($#ARGV < 0){
 	print "Usage: waystowhitehouse.pl <data file>\n";
@@ -136,4 +136,7 @@ if($swino < 20 and $swino > 0){
 	delete_doubles($dummyvar,\@linea);
 	print $head;
 	print join('',@linea);
+
+	#my @mustwin = get_mustwin(\@linea,\@statedesc);
+	#print join('',@mustwin) if ($#mustwin > -1);
 }
