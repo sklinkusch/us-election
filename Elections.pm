@@ -732,7 +732,7 @@ sub get_mustwin {
 	}
 	if ($#repnotneeded > -1){
 		my $rrret_string = join(',',@repnotneeded);
-		$return_array[$return_index] = sprintf("Not necessary (R): %s\n", $rret_string);
+		$return_array[$return_index] = sprintf("Not necessary (R): %s\n", $rrret_string);
 		$return_index++;
 	}
 	return @return_array;
