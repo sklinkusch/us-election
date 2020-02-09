@@ -23,8 +23,9 @@ each state at-large or congressional district (for ME & NE)
 Note that this script is purely probabilistic. This means, it does not contain
 if a state or district is more likely to be won by a certain party.
 
-For less than 20 open states/districts, all possible szenarios are shown.
-Similar szenarios are grouped.
+For 15 open states/districts or less, all possible szenarios are shown.
+Similar szenarios are grouped. Also, states a certain candidate has to win to
+win the election are shown as well as states a candidate does not need.
 
 **Usage:** `waystowhitehouse.pl link/to/waystowhitehouse.dat`
 
