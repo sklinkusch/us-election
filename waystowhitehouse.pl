@@ -134,9 +134,11 @@ if($swino <= 15 and $swino > 0){
 	my ($nome, $nomex) = get_nome(@swingsts);
 	my @linea = modify_results($dummyvar,$swino,$nome,$nomex,$demsafe,$repsafe,$needed,\@permcs,\%statevals,\@swingsts);
 	delete_doubles($dummyvar,\@linea);
-	my @mustwin = get_mustwin(\@linea,\@statedesc);
-	print join('',@mustwin) if ($#mustwin > -1);
-	print $head;
-	print join('',@linea);
 
+	if($demsafe < $needed and $repsafe < $needed){
+		my @mustwin = get_mustwin(\@linea,\@statedesc);
+		print join('',@mustwin) if ($#mustwin > -1);
+		print $head;
+		print join('',@linea);
+	}
 }
