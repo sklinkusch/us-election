@@ -699,6 +699,42 @@ sub get_mustwin {
 		$return_array[$return_index] = sprintf("Needed for victory (R): %s\n", $rret_string);
 		$return_index++;
 	}
+	my @demnotneeded;
+	my @repnotneeded;
+	foreach my $y (0..$#$statedesc){
+		my $current_state = $$statedesc[$y];
+		my $dnumline = 0;
+		my $rnumline = 0;
+		my $dlast_result = "";
+		my $rlast_result = "";
+		foreach my $z (0..$#results){
+			if($results[$z]{winner} eq "DEM" and $dnumline == 0){
+				$dlast_result = $results[$z]{$current_state};
+				$dnumline++;
+			} elsif ($results[$z]{winner} eq "REP" and $rnumline == 0){
+				$rlast_result = $results[$z]{$current_state};
+				$rnumline++;
+			} elsif ($results[$z]{winner} eq "DEM"){
+				$dlast_result = "none" if ($results[$z]{$current_state} ne $dlast_result);
+				$dnumline++;
+			} elsif ($results[$z]{winner} eq "REP"){
+				$rlast_result = "none" if ($results[$z]{$current_state} ne $rlast_result);
+				$rnumline++;
+			}
+		}
+		push(@demnotneeded, $current_state) if ($dlast_result eq 'X');
+		push(@repnotneeded, $current_state) if ($rlast_result eq 'X');
+	}
+	if ($#demnotneeded > -1){
+		my $ddret_string = join(',', @demnotneeded);
+		$return_array[$return_index] = sprintf("Not necessary (D): %s\n", $ddret_string);
+		$return_index++;
+	}
+	if ($#repnotneeded > -1){
+		my $rrret_string = join(',',@repnotneeded);
+		$return_array[$return_index] = sprintf("Not necessary (R): %s\n", $rret_string);
+		$return_index++;
+	}
 	return @return_array;
 }
 
