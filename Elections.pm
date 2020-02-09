@@ -636,20 +636,31 @@ sub modify_results {
 }
 
 
+sub splitline {
+	my $string = shift;
+	$string =~ /^([DRX ]+)(DEM|REP|TIE)/;
+	my @result;
+	@result = ($1, $2);
+	return @result;
+}
+
+
 sub get_mustwin {
 	my ($linea,$statedesc) = @_;
 	my @results;
 	my @return_array;
 	foreach my $x (0..$#$linea){
-		$$linea[$x] =~ /([DRX] )+ (DEM|REP|TIE)  [\d]{3}:[ \d]{3} x [ \d]+/;
-		my @states = split(/ /,$1);
-		my $winner = $2;
+		my @resarray = splitline($$linea[$x]);
+		my @states = split(/  /,$resarray[0]);
+		pop(@states);
+		my $winner = $resarray[1];
 		my %desc = ();
 		$desc{"winner"} = $winner;
+
 		foreach my $y (0..$#$statedesc){
 			$desc{$$statedesc[$y]} = $states[$y];
 		}
-		push(@results,%desc);
+		push(@results,\%desc);
 	}
 	my @demneeded;
 	my @repneeded;
@@ -667,10 +678,10 @@ sub get_mustwin {
 				$rlast_result = $results[$z]{$current_state};
 				$rnumline++;
 			} elsif ($results[$z]{"winner"} eq "DEM"){
-				$dlast_result = "none" if ($results[$z]{$current_state} != $dlast_result);
+				$dlast_result = "none" if ($results[$z]{$current_state} ne $dlast_result);
 				$dnumline++;
 			} elsif ($results[$z]{"winner"} eq "REP"){
-				$rlast_result = "none" if ($results[$z]{$current_state} != $rlast_result);
+				$rlast_result = "none" if ($results[$z]{$current_state} ne $rlast_result);
 				$rnumline++;
 			}
 		}
