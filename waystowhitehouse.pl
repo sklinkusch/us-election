@@ -137,6 +137,6 @@ if($swino < 20 and $swino > 0){
 	print $head;
 	print join('',@linea);
 
-	#my @mustwin = get_mustwin(\@linea,\@statedesc);
-	#print join('',@mustwin) if ($#mustwin > -1);
+	my @mustwin = get_mustwin(\@linea,\@statedesc);
+	print join('',@mustwin) if ($#mustwin > -1);
 }
