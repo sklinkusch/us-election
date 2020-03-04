@@ -61,7 +61,7 @@ presidential election in the US. It consists of the following files:
 **`statevals.dat`**: contains the current number of electoral votes per
 state at-large or congressional district (for ME and NE)  
 **`waystowhitehouse.dat`**: is a template file that contains a notifier for
-each state at-large or congressional district (for ME & NE)
+each state at-large or congressional district (for ME & NE)   
 **`prespercent.dat`**: is a template file containing the probabilities in each state or
 congressional district for the Democrats (2nd column) and the Republicans (3rd
 column) to win the respective state/district
