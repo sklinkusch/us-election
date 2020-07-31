@@ -6,7 +6,7 @@ use Algorithm::Combinatorics qw/variations_with_repetition/;
 use List::Util qw(first);
 use FindBin;
 use lib $FindBin::RealBin;
-use Elections qw(get_statevals get_parstates check_par check_states get_closedstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles);
+use Elections qw(get_statevals get_parstates check_par check_states get_closedstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_openstates);
 
 if ($#ARGV < 0){
 	print "Usage: presprob.pl <data file>\n";
@@ -38,7 +38,7 @@ my $nesum;
 my @closedstates = get_closedstates(\@demstates,\@repstates,\$ifme,\$ifmea,\$ifmeb,\$ifne,\$ifnea,\$ifneb,\$ifnec,\$mesum,\$nesum);
 my @openvalx;
 my @swingsts;
-Elections::get_openstates(\%statevals,\@allstates,\@closedstates,\@swingsts,\@openvalx);
+get_openstates(\%statevals,\@allstates,\@closedstates,\@swingsts,\@openvalx);
 my @openvals = sort { $b <=> $a } @openvalx;
 my $perms = $#swingsts + 1;
 my $demsafe = get_safeval(\%statevals,\@demstates);
