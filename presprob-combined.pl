@@ -137,7 +137,7 @@ my $summrPure = $respuremat[0];
 my $summrxPure = commify($summrPure);
 my $repprobPure = 100 * $summrPure / $szenariosPure;
 if ($summrPercent != 0 or $summrPure != 0){
-	printf("Rep. probability:  %8.4f %%  %32s   %8.4f %%  %26s\n", $repprobPercent, $summrxPercent, $repprobPure, $summdxPure);
+	printf("Rep. probability:  %8.4f %%  %32s   %8.4f %%  %26s\n", $repprobPercent, $summrxPercent, $repprobPure, $summrxPure);
 }
 
 if($swino <= 15 and $swino > 0){
@@ -164,7 +164,6 @@ if($swino <= 15 and $swino > 0){
 	modify_nebraska($dummyvar,$swino,$nesum,$dnesum,$rnesum,\@swingsts,\@permbs,\@permcs,\@winna,\@winnb);
 	$dummyvar = ($#permcs + 1)/$swino;
 
-	# print_info(@winnb);
 	my ($nome, $nomex) = get_nome(@swingsts);
 	my @linea = modify_results($dummyvar,$swino,$nome,$nomex,$demsafe,$repsafe,$needed,\@permcs,\%statevals,\@swingsts);
 	delete_doubles($dummyvar,\@linea);
@@ -173,8 +172,6 @@ if($swino <= 15 and $swino > 0){
 		my @mustwin = get_mustwin(\@linea,\@statedesc);
 		print join('',@mustwin) if ($#mustwin > -1);
 
-		# print $head;
-		# print join('',@linea);
 	}
 } else {
 	my @rneeded;
