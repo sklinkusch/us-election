@@ -7,7 +7,7 @@ use Algorithm::Combinatorics qw/variations_with_repetition/;
 use List::Util qw(first);
 use FindBin;
 use lib $FindBin::RealBin;
-use Elections qw(get_statevals get_parstates check_par check_states get_openstates get_closedstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent closed_simple build_matpc commify_float);
+use Elections qw(get_statevals get_parstates check_par check_states get_openstates get_closedstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat result_mat get_statedesc get_head build_permas modify_maine modify_nebraska print_info get_nome modify_results delete_doubles get_percent closed_simple build_matpc commify_float get_mustwin);
 
 if ($#ARGV < 1){
 	print "Usage: presprob-combined.pl <data file> <percent file>\n";
