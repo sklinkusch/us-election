@@ -139,3 +139,56 @@ my $repprobPure = 100 * $summrPure / $szenariosPure;
 if ($summrPercent != 0 or $summrPure != 0){
 	printf("Rep. probability:  %8.4f %%  %32s   %8.4f %%  %26s\n", $repprobPercent, $summrxPercent, $repprobPure, $summdxPure);
 }
+
+if($swino <= 15 and $swino > 0){
+
+	# Calculate and print corrected probabilities (and all the variations)
+	my $iter = variations_with_repetition([qw/D R/], $perms);
+	my @statedesc = get_statedesc(@swingsts);
+	my $head = get_head($swino,\@statedesc,\@openvals);
+	my @permas;
+	my @safe = ($demsafe, $repsafe, $needed);
+	my @winners;
+	my $count = 0;
+
+	while ( my $p = $iter->next) {
+		build_permas('V',$count,$p,$swino,\%statevals,\@swingsts,\@safe,\@permas,\@winners);
+		$count++;
+	}
+	my @permbs;
+	my @winna;
+	modify_maine($nrop, $swino, $mesum, $dmesum, $rmesum, \@swingsts, \@permas, \@permbs, \@winners, \@winna);
+	my $dummyvar = ($#permbs + 1)/$swino;
+	my @permcs;
+	my @winnb;
+	modify_nebraska($dummyvar,$swino,$nesum,$dnesum,$rnesum,\@swingsts,\@permbs,\@permcs,\@winna,\@winnb);
+	$dummyvar = ($#permcs + 1)/$swino;
+
+	# print_info(@winnb);
+	my ($nome, $nomex) = get_nome(@swingsts);
+	my @linea = modify_results($dummyvar,$swino,$nome,$nomex,$demsafe,$repsafe,$needed,\@permcs,\%statevals,\@swingsts);
+	delete_doubles($dummyvar,\@linea);
+
+	if($demsafe < $needed and $repsafe < $needed){
+		my @mustwin = get_mustwin(\@linea,\@statedesc);
+		print join('',@mustwin) if ($#mustwin > -1);
+
+		# print $head;
+		# print join('',@linea);
+	}
+} else {
+	my @rneeded;
+	my @dneeded;
+	foreach my $noopen (0..$#swingsts) {
+		if($statevals{$swingsts[$noopen]} >= $demgap) {
+			push(@rneeded, $swingsts[$noopen]);
+		}
+		if($statevals{$swingsts[$noopen]} >= $repgap) {
+			push(@dneeded, $swingsts[$noopen]);
+		}
+	}
+	my $rneedstring = sprintf("Needed for Victory (R): " . "%-3s" x @rneeded . "\n", @rneeded) if ($#rneeded >= 0);
+	my $dneedstring = sprintf("Needed for Victory (D): " . "%-3s" x @dneeded . "\n", @dneeded) if ($#dneeded >= 0);
+	print $rneedstring if ($#rneeded >= 0);
+	print $dneedstring if ($#dneeded >= 0);
+}
