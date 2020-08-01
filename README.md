@@ -61,7 +61,7 @@ presidential election in the US. It consists of the following files:
 **`statevals.dat`**: contains the current number of electoral votes per
 state at-large or congressional district (for ME and NE)  
 **`waystowhitehouse.dat`**: is a template file that contains a notifier for
-each state at-large or congressional district (for ME & NE)   
+each state at-large or congressional district (for ME & NE)  
 **`prespercent.dat`**: is a template file containing the probabilities in each state or
 congressional district for the Democrats (2nd column) and the Republicans (3rd
 column) to win the respective state/district
@@ -75,6 +75,36 @@ This script is not only probabilistic. This means, it contains
 if a state or district is more likely to be won by a certain party.
 
 **Usage:** `presprob-pc.pl link/to/waystowhitehouse.dat link/to/prespercent.dat`
+
+## `presprob-combined.pl`
+
+This script is a combination of the capabilities of `presprob.pl` and
+`presprob-pc.pl` with some aspects of `waystowhitehouse.pl`. It calculates
+the statistical probability if a certain party wins the presidential
+election, once including the probabilities to win single states or
+districts, once with equal probabilities in single states or districts.
+Finally, it includes also the states a certain candidate needs to win for a
+victory or not to lose the election.
+
+**`presprob-combined.pl`**: the general executable Perl script file  
+**`Elections.pm`**: contains subroutines used by the Perl script  
+**`statevals.dat`**: contains the current number of electoral votes per
+state at-large or congressional district (for ME and NE)  
+**`waystowhitehouse.dat`**: is a template file that contains a notifier for
+each state at-large or congressional district (for ME & NE)  
+**`prespercent.dat`**: is a template file containing the probabilities in each state or
+congressional district for the Democrats (2nd column) and the Republicans (3rd
+column) to win the respective state/district
+
+- "D" if the state or district is won by the democrats or safe for the
+  democratic party
+- "R" if the state or district is won by the republicans/GOP or safe for the GOP
+- "X" if this state is open
+
+This script is not only probabilistic. This means, it contains
+if a state or district is more likely to be won by a certain party.
+
+**Usage:** `presprob-combined.pl link/to/waystowhitehouse.dat link/to/prespercent.dat`
 
 ## `presprob-hist.pl`
 
