@@ -77,7 +77,7 @@ printf "Republican votes:   %3u\n", $repsafe if $repno > 0;
 printf "Open votes:         %3u\n", $swingnum if $swino > 0;
 printf "Total votes:        %3u\n", $total;
 printf "Needed for victory: %3u\n", $needed;
-printf("Number of permutations:         %26s\n",$nropx);
+printf("Number of permutations:                                                       %26s\n",$nropx);
 
 # Calculate and print probabilities (without percents)
 my @swinr = delete_mainenebraska(@swingsts,@openvals);
@@ -92,8 +92,7 @@ my $szenariosPure = $respuremat[3];
 my $nonsensPure = $nrop - $szenariosPure;
 my $nonsensxPure = commify($nonsensPure);
 my $szenariosxPure = commify($szenariosPure);
-printf("Non-sensible permutations:      %26s\n", $nonsensxPure);
-printf("Szenarios gesamt:               %26s\n", $szenariosxPure);
+printf("Non-sensible permutations:                                                    %26s\n", $nonsensxPure);
 
 # Calculate and print probabilities (with percents)
 my @demPercentMat = build_matpc($swino,$total,$demsafe,\@openvals, \@swingsts,\%dsperc);
@@ -105,29 +104,38 @@ my $szenarsPercent = sprintf("% 26.4f",$szenariosPercent);
 my $szenariosxPercent = commify_float($szenarsPercent);
 
 # printf("Non-sensible permutations:     %26s\n", $nonsensx);
-printf("Szenarios gesamt:              %32s\n", $szenariosxPercent);
+printf("Szenarios gesamt:              %32s               %26s\n", $szenariosxPercent, $szenariosxPure);
 
 # Calculating tie probability
 my $summtPercent = sprintf("% 26.4f",$resPercentMat[1]);
 my $summtxPercent = commify_float($summtPercent);
 my $tieprobPercent = 100 * $summtPercent / $szenariosPercent;
+my $summtPure = $respuremat[1];
+my $summtxPure = commify($summtPure);
+my $tieprobPure = 100 * $summtPure / $szenariosPure;
 
-if ($summtPercent != 0){
-	printf("Tie probability:   %8.4f %%  %32s\n", $tieprobPercent, $summtxPercent);
+if ($summtPercent != 0 or $summtPure != 0){
+	printf("Tie probability:   %8.4f %%  %32s   %8.4f %%  %26s\n", $tieprobPercent, $summtxPercent, $tieprobPure, $summtxPure);
 }
 
 # Calculating Dem probability
 my $summdPercent = sprintf("% 26.4f",$resPercentMat[2]);
 my $summdxPercent = commify_float($summdPercent);
 my $demprobPercent = 100 * $summdPercent / $szenariosPercent;
-if ($summdPercent != 0){
-	printf("Dem. probability:  %8.4f %%  %32s\n", $demprobPercent, $summdxPercent);
+my $summdPure = $respuremat[2];
+my $summdxPure = commify($summdPure);
+my $demprobPure = 100 * $summdPure / $szenariosPure;
+if ($summdPercent != 0 or $summdPure != 0){
+	printf("Dem. probability:  %8.4f %%  %32s   %8.4f %%  %26s\n", $demprobPercent, $summdxPercent, $demprobPure, $summdxPure);
 }
 
 # Calculating Rep probability
 my $summrPercent = sprintf("% 26.4f",$resPercentMat[0]);
 my $summrxPercent = commify_float($summrPercent);
 my $repprobPercent = 100 * $summrPercent / $szenariosPercent;
-if ($summrPercent != 0){
-	printf("Rep. probability:  %8.4f %%  %32s\n", $repprobPercent, $summrxPercent);
+my $summrPure = $respuremat[0];
+my $summrxPure = commify($summrPure);
+my $repprobPure = 100 * $summrPure / $szenariosPure;
+if ($summrPercent != 0 or $summrPure != 0){
+	printf("Rep. probability:  %8.4f %%  %32s   %8.4f %%  %26s\n", $repprobPercent, $summrxPercent, $repprobPure, $summdxPure);
 }
