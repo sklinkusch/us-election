@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Algorithm::Combinatorics qw/variations_with_repetition/;
 use List::Util qw(first);
+use Cwd 'abs_path';
 use FindBin;
 use lib $FindBin::RealBin;
 use HistElections qw(get_hvals get_parstates check_par check_states get_closedstates get_openstates get_safeval get_swingperm commify sort_states delete_mainenebraska build_mat result_mat);
@@ -13,14 +14,15 @@ if ($#ARGV < 1){
 	print "data file contains all states/districts with D/R/X notifier\n";
 	exit;
 }
-my $year = $ARGV[0];
-my $datfile = $ARGV[1];
+my $year = join('',$ARGV[0]);
+my $datfile = join('',$ARGV[1]);
+my $fulldat = abs_path($datfile);
 
 my %statevals = get_hvals($year);
 my @allstates = sort { $statevals{$b} <=> $statevals{$a} || $a cmp $b } keys %statevals;
 my @valstates = @statevals{@allstates};
-my @demstates = get_parstates($datfile,'D');
-my @repstates = get_parstates($datfile,'R');
+my @demstates = get_parstates($fulldat,'D');
+my @repstates = get_parstates($fulldat,'R');
 my ($dmesum,$dnesum,$dme,$dmea,$dmeb,$dmex,$dne,$dnea,$dneb,$dnec) = check_par(\@demstates, \@allstates);
 my ($rmesum,$rnesum,$rme,$rmea,$rmeb,$rmex,$rne,$rnea,$rneb,$rnec) = check_par(\@repstates, \@allstates);
 check_states(@demstates,@repstates);
